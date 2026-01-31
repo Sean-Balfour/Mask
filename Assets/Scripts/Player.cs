@@ -1,151 +1,186 @@
-using Unity.Android.Types;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent (typeof (Rigidbody2D))]
+[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(PlayerInput))]
 public class Player : MonoBehaviour
 {
+    [Header("Input Actions")]
+    [SerializeField] private InputActionReference moveAction;
+    [SerializeField] private InputActionReference dashAction;
+
     [Header("Movement")]
-    [SerializeField]
-    private float maxSpeed = 5.0f;
-    [SerializeField]
-    private float acceleration = 18.0f;
-    [SerializeField]
-    private float deceleration = 10.0f;
+    [SerializeField] private float moveSpeed = 6f;
+    [SerializeField] private float acceleration = 40f;
+    [SerializeField] private float deceleration = 55f;
+    [SerializeField] private bool normalizeDiagonal = true;
 
-    [SerializeField]
-    private float dashSpeed = 12.0f;
-    [SerializeField]
-    private float dashDuration = 0.18f;
-    [SerializeField]
-    private float dashCooldown = 0.6f;
+    [Header("Dash")]
+    [SerializeField] private float dashSpeed = 14f;
+    [SerializeField] private float dashDuration = 0.12f;
+    [SerializeField] private float dashCooldown = 0.35f;
+    [SerializeField] private bool dashUsesInputOrLastDirection = true;
 
-    private Rigidbody2D rigidbody;
-    private Vector2 moveInput;
-    private Vector2 lastMoveDir = Vector2.right;
+    [Header("Movement Meter")]
+    [SerializeField] private float meterMax = 100f;
+    [SerializeField] private float meterBuildRate = 35f;
+    [SerializeField] private float meterDrainRate = 65f;
+    [SerializeField] private float movingThreshold = 0.05f;
 
-    private float dashTimer;
-    private float dashCoooldownTimer;
-    private bool isDashing;
+    public float Meter => _meter;
+    public float MeterNormalized => meterMax <= 0f ? 0f : Mathf.Clamp01(_meter / meterMax);
+    public Vector2 LastMoveDirection => _lastNonZeroDir;
+
+    public bool UsingGamepad => _usingGamepad;
+    public string CurrentControlScheme => _currentControlScheme;
+
+    private Rigidbody2D _rb;
+    private PlayerInput _playerInput;
+
+    private Vector2 _rawInput;
+    private Vector2 _moveDir;
+    private Vector2 _lastNonZeroDir = Vector2.right;
+
+    private float _meter;
+
+    private bool _isDashing;
+    private float _dashTimer;
+    private float _dashCooldownTimer;
+    private Vector2 _dashDir;
+
+    private bool _usingGamepad;
+    private string _currentControlScheme = "";
 
     private void Awake()
     {
-        rigidbody = GetComponent<Rigidbody2D>();
-        rigidbody.gravityScale = 0.0f;
-        rigidbody.linearDamping = 0.0f;
+        _rb = GetComponent<Rigidbody2D>();
+        _playerInput = GetComponent<PlayerInput>();
+
+        _rb.gravityScale = 0f;
+        _rb.freezeRotation = true;
+
+        UpdateControlScheme();
+    }
+
+    private void OnEnable()
+    {
+        moveAction?.action.Enable();
+        dashAction?.action.Enable();
+
+        if (dashAction != null)
+            dashAction.action.performed += OnDashPerformed;
+
+        _playerInput.onControlsChanged += OnControlsChanged;
+    }
+
+    private void OnDisable()
+    {
+        if (dashAction != null)
+            dashAction.action.performed -= OnDashPerformed;
+
+        _playerInput.onControlsChanged -= OnControlsChanged;
+
+        moveAction?.action.Disable();
+        dashAction?.action.Disable();
     }
 
     private void Update()
     {
-        ReadInput();
-        ReadDashInput();
+        _rawInput = moveAction != null ? moveAction.action.ReadValue<Vector2>() : Vector2.zero;
+        _moveDir = _rawInput;
+
+        if (normalizeDiagonal && _moveDir.sqrMagnitude > 1f)
+            _moveDir.Normalize();
+
+        if (_moveDir.sqrMagnitude > 0.0001f)
+            _lastNonZeroDir = _moveDir.normalized;
+
+        _dashCooldownTimer -= Time.deltaTime;
+
+        if (_isDashing)
+        {
+            _dashTimer -= Time.deltaTime;
+            if (_dashTimer <= 0f)
+                _isDashing = false;
+        }
+
+        UpdateMeter();
     }
 
     private void FixedUpdate()
     {
-        UpdateDashTimers();
-
-        if (isDashing)
+        if (_isDashing)
+        {
+            _rb.linearVelocity = _dashDir * dashSpeed;
             return;
-
-        ApplyMovement();
-        ClampSpeed();
-    }
-
-    private void ReadInput()
-    {
-        Vector2 move = Vector2.zero;
-
-        if (Gamepad.current != null)
-        {
-            move = Gamepad.current.leftStick.ReadValue();
-        }
-        else if (Keyboard.current != null)
-        {
-            if (Keyboard.current.wKey.isPressed)
-                move.y += 1;
-            if (Keyboard.current.sKey.isPressed)
-                move.y -= 1;
-            if (Keyboard.current.aKey.isPressed)
-                move.x -= 1;
-            if (Keyboard.current.dKey.isPressed)
-                move.x += 1;
         }
 
-        moveInput = move;
+        Vector2 targetVel = _moveDir * moveSpeed;
+        Vector2 vel = _rb.linearVelocity;
+        float rate = targetVel.sqrMagnitude > 0.0001f ? acceleration : deceleration;
 
-        if (moveInput.sqrMagnitude > 0.001f)
-            lastMoveDir = moveInput.normalized;
+        vel = Vector2.MoveTowards(vel, targetVel, rate * Time.fixedDeltaTime);
+        _rb.linearVelocity = vel;
     }
 
-    private void ReadDashInput()
+    private void OnDashPerformed(InputAction.CallbackContext ctx)
     {
-        if (dashCoooldownTimer > 0.0f || isDashing)
-            return;
-
-        bool dashPressed = (Gamepad.current != null && Gamepad.current.buttonSouth.wasPressedThisFrame) || (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame);
-
-        if (!dashPressed)
-            return;
-
-        Vector2 dashDirection = moveInput.sqrMagnitude > 0.001f ? moveInput.normalized : lastMoveDir;
-
-        StartDash(dashDirection);
+        Dash();
     }
 
-    private void StartDash(Vector2 dashDirection)
+    public void Dash()
     {
-        isDashing = true;
-        dashTimer = dashDuration;
-        dashCoooldownTimer = dashCooldown;
-
-        rigidbody.linearVelocity = dashDirection * dashSpeed;
-    }
-
-    private void UpdateDashTimers()
-    {
-        if (dashCoooldownTimer > 0.0f)
-            dashCoooldownTimer -= Time.fixedDeltaTime;
-
-        if (!isDashing)
+        if (_isDashing || _dashCooldownTimer > 0f)
             return;
 
-        dashTimer -= Time.fixedDeltaTime;
+        Vector2 chosenDir = dashUsesInputOrLastDirection
+            ? (_moveDir.sqrMagnitude > 0.0001f ? _moveDir.normalized : _lastNonZeroDir.normalized)
+            : _lastNonZeroDir.normalized;
 
+        if (chosenDir.sqrMagnitude <= 0.0001f)
+            chosenDir = Vector2.right;
 
-        if (dashTimer <= 0.0f)
+        _dashDir = chosenDir;
+        _isDashing = true;
+        _dashTimer = dashDuration;
+        _dashCooldownTimer = dashCooldown;
+    }
+
+    private void UpdateMeter()
+    {
+        float speed = _rb.linearVelocity.magnitude;
+
+        if (speed > movingThreshold)
         {
-            isDashing = false;
-        }
-    }
-
-    private void ApplyMovement()
-    {
-        if (moveInput.sqrMagnitude > 0.0001f)
-        {
-            rigidbody.AddForce(moveInput * acceleration, ForceMode2D.Force);
+            float intensity = Mathf.Clamp01(moveSpeed <= 0f ? 0f : speed / moveSpeed);
+            _meter += meterBuildRate * intensity * Time.deltaTime;
         }
         else
         {
-            // Smooth water slowdown
-            Vector2 v = rigidbody.linearVelocity;
-
-            if (v.magnitude < 0.05f)
-            {
-                rigidbody.linearVelocity = Vector2.zero;
-            }
-            else
-            {
-                rigidbody.AddForce(-v.normalized * deceleration, ForceMode2D.Force);
-            }
+            _meter -= meterDrainRate * Time.deltaTime;
         }
+
+        _meter = Mathf.Clamp(_meter, 0f, meterMax);
     }
 
-    private void ClampSpeed()
+    private void OnControlsChanged(PlayerInput obj)
     {
-        Vector2 v = rigidbody.linearVelocity;
+        UpdateControlScheme();
+    }
 
-        if (v.magnitude > maxSpeed)
-            rigidbody.linearVelocity = v / v.magnitude * maxSpeed;
+    private void UpdateControlScheme()
+    {
+        _currentControlScheme = _playerInput.currentControlScheme ?? "";
+
+        _usingGamepad = false;
+
+        foreach (var device in _playerInput.devices)
+        {
+            if (device is Gamepad)
+            {
+                _usingGamepad = true;
+                break;
+            }
+        }
     }
 }
