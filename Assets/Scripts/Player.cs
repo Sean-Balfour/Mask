@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -30,12 +31,33 @@ public class Player : MonoBehaviour
     [Header("Facing")]
     [SerializeField] private float rotationSpeed = 15f;
 
+    [SerializeField] private SpriteRenderer baseSprite;
+    [SerializeField] private SpriteRenderer blendSprite;
+    [SerializeField] private Animator baseAnimator;
+    [SerializeField] private Animator blendAnimator;
+
+    [SerializeField]
+    private Fade fade;
+
+    [SerializeField]
+    private Enemy enemy;
+
+    public bool dead = false;
+
+    [SerializeField]
+    private int Lives = 3;
+    private int currentLives;
+
+    [SerializeField]
+    private float ImmuneTimeAfterDie = 3.0f;
+
+    public bool immune = false;
+
     public float Meter => _meter;
     public float MeterNormalized => meterMax <= 0f ? 0f : Mathf.Clamp01(_meter / meterMax);
     public Vector2 LastMoveDirection => _lastNonZeroDir;
 
     private Rigidbody2D _rb;
-    private SpriteRenderer _sprite;
 
     private Vector2 _rawInput;
     private Vector2 _moveDir;
@@ -50,13 +72,19 @@ public class Player : MonoBehaviour
 
     private float _targetRotation;
 
+    private Vector3 startPosition;
+
     private void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
-        _sprite = GetComponentInChildren<SpriteRenderer>();
-
         _rb.gravityScale = 0f;
         _rb.freezeRotation = true;
+    }
+
+    private void Start()
+    {
+        startPosition = transform.position;
+        currentLives = Lives;
     }
 
     private void OnEnable()
@@ -79,6 +107,9 @@ public class Player : MonoBehaviour
 
     private void Update()
     {
+        if (Time.timeScale == 0 || dead)
+            return;
+
         _rawInput = moveAction != null ? moveAction.action.ReadValue<Vector2>() : Vector2.zero;
         _moveDir = _rawInput;
 
@@ -104,6 +135,9 @@ public class Player : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (Time.timeScale == 0 || dead)
+            return;
+
         if (_isDashing)
         {
             _rb.linearVelocity = _dashDir * dashSpeed;
@@ -119,6 +153,21 @@ public class Player : MonoBehaviour
         _rb.linearVelocity = vel;
 
         ApplyRotation();
+
+        baseAnimator.SetFloat("moveSpeed", vel.magnitude);
+        blendAnimator.SetFloat("moveSpeed", vel.magnitude);
+
+        float denom = Mathf.Max(0.0001f, meterMax);
+        float t = Mathf.Clamp01(_meter / denom);
+
+        float alphaBase = 1.0f - t;
+        float alphaBlend = t;
+
+        if (!immune)
+        {
+            baseSprite.color = new Color(baseSprite.color.r, baseSprite.color.g, baseSprite.color.b, alphaBase);
+            blendSprite.color = new Color(blendSprite.color.r, blendSprite.color.g, blendSprite.color.b, alphaBlend);
+        }
     }
 
     private void OnDashPerformed(InputAction.CallbackContext ctx)
@@ -174,7 +223,8 @@ public class Player : MonoBehaviour
             return;
 
         bool flip = dir.x < 0f;
-        if (_sprite != null) _sprite.flipX = flip;
+        baseSprite.flipX = flip;
+        blendSprite.flipX = flip;
 
         float angle = Mathf.Atan2(dir.y, Mathf.Abs(dir.x)) * Mathf.Rad2Deg;
 
@@ -193,5 +243,64 @@ public class Player : MonoBehaviour
         );
 
         _rb.rotation = newRotation;
+    }
+
+    public void Die()
+    {
+        enemy.isMoving = false;
+        currentLives--;
+        dead = true;
+        _rb.linearVelocity = Vector2.zero;
+        _meter = 0;
+        baseSprite.color = new Color(baseSprite.color.r, baseSprite.color.g, baseSprite.color.b, 1.0f);
+        blendSprite.color = new Color(blendSprite.color.r, blendSprite.color.g, blendSprite.color.b, 0.0f);
+
+        if (currentLives < 0)
+        {
+            fade.FadeOutEnd();
+        }
+        else
+        {
+            StartCoroutine(Respawn());
+        }
+    }
+
+    private IEnumerator Respawn()
+    {
+        fade.FadeOut();
+
+        yield return new WaitForSeconds(0.5f);
+        float tick = 0;
+        for (int i = 0; i < 100; i++)
+        {
+            tick++;
+            yield return new WaitForSeconds(1.0f / 100.0f);
+        }
+
+        transform.position = startPosition;
+
+        fade.FadeIn();
+
+        yield return new WaitForSeconds(0.5f);
+        tick = 0;
+        for (int i = 0; i < 100; i++)
+        {
+            tick++;
+            yield return new WaitForSeconds(1.0f / 100.0f);
+        }
+
+        enemy.isMoving = true;
+
+        StartCoroutine(ImmuneCooldown());
+    }
+
+    private IEnumerator ImmuneCooldown()
+    {
+        immune = true;
+        dead = false;
+
+        yield return new WaitForSeconds(ImmuneTimeAfterDie);
+
+        immune = false;
     }
 }
