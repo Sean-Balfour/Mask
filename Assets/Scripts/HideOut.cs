@@ -8,7 +8,7 @@ public class HideOut : MonoBehaviour
 
         if (player != null )
         {
-            player.bInHideOut = true;
+            player.inHideOut = true;
         }
     }
 
@@ -18,7 +18,7 @@ public class HideOut : MonoBehaviour
 
         if (player != null)
         {
-            player.bInHideOut = false;
+            player.inHideOut = false;
         }
     }
 }

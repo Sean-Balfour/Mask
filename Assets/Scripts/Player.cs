@@ -40,7 +40,9 @@ public class Player : MonoBehaviour
     [SerializeField]
     private Fade fade;
 
-    public bool bInHideOut = false;
+    [SerializeField]
+    private bool needsHideOut = true;
+    public bool inHideOut = false;
 
     [SerializeField]
     private Enemy enemy;
@@ -209,13 +211,23 @@ public class Player : MonoBehaviour
         }
         else
         {
-            if (bInHideOut)
+            if (needsHideOut)
             {
-                _meter -= meterDrainRate * Time.deltaTime;
+                if (inHideOut)
+                {
+                    _meter -= meterDrainRate * Time.deltaTime;
+                }
             }
             else
             {
-                _meter -= meterDrainRate * meterHideOutMultiplier *  Time.deltaTime;
+                if (inHideOut)
+                {
+                    _meter -= meterDrainRate * meterHideOutMultiplier * Time.deltaTime;
+                }
+                else
+                {
+                    _meter -= meterDrainRate * Time.deltaTime;
+                }
             }
         }
 
@@ -259,6 +271,9 @@ public class Player : MonoBehaviour
     {
         enemy.isMoving = false;
         currentLives--;
+
+        UIManager.Instance.UpdateLives(currentLives);
+
         dead = true;
         _rb.linearVelocity = Vector2.zero;
         _meter = 0;

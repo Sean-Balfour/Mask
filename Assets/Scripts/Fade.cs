@@ -6,10 +6,21 @@ using UnityEngine.UI;
 
 public class Fade : MonoBehaviour
 {
+    public static Fade Instance;
+
+    private void Awake()
+    {
+        if (Instance == null)
+            Instance = this;
+        else
+            Destroy(gameObject);
+
+    }
+
     [SerializeField]
     private Image FadeBG;
 
-    private void Awake()
+    private void Start()
     {
         FadeIn();
     }
@@ -29,7 +40,7 @@ public class Fade : MonoBehaviour
         StartCoroutine(DoFadeOutEnd());
     }
 
-    private IEnumerator DoFadeOut()
+    public IEnumerator DoFadeOut()
     {
         float tick = 0;
         for (int i = 0; i < 100; i++)
