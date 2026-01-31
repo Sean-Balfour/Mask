@@ -13,6 +13,7 @@ public class CameraManager : MonoBehaviour
     [SerializeField] private bool useLookAhead = true;
     [SerializeField] private float lookAheadDistance = 1.5f;
     [SerializeField] private float lookAheadSmoothTime = 0.12f;
+    [SerializeField] private float lookAheadDeadZone = 0.15f;
 
     private Vector3 _velocity;
     private Vector3 _lookAheadVelocity;
@@ -22,8 +23,12 @@ public class CameraManager : MonoBehaviour
 
     private void Awake()
     {
-        if (target != null)
-            _player = target.GetComponent<Player>();
+        RefreshPlayerRef();
+    }
+
+    private void OnEnable()
+    {
+        RefreshPlayerRef();
     }
 
     private void LateUpdate()
@@ -36,11 +41,14 @@ public class CameraManager : MonoBehaviour
         if (useLookAhead && _player != null)
         {
             Vector2 dir = _player.LastMoveDirection;
-            Vector3 look = new Vector3(dir.x, dir.y, 0f) * lookAheadDistance;
+
+            Vector3 lookTarget = (dir.sqrMagnitude > lookAheadDeadZone * lookAheadDeadZone)
+                ? new Vector3(dir.x, dir.y, 0f) * lookAheadDistance
+                : Vector3.zero;
 
             _currentLookAhead = Vector3.SmoothDamp(
                 _currentLookAhead,
-                look,
+                lookTarget,
                 ref _lookAheadVelocity,
                 lookAheadSmoothTime
             );
@@ -61,9 +69,14 @@ public class CameraManager : MonoBehaviour
     public void SetTarget(Transform newTarget)
     {
         target = newTarget;
-        _player = target != null ? target.GetComponent<Player>() : null;
+        RefreshPlayerRef();
         _velocity = Vector3.zero;
         _lookAheadVelocity = Vector3.zero;
         _currentLookAhead = Vector3.zero;
+    }
+
+    private void RefreshPlayerRef()
+    {
+        _player = target != null ? target.GetComponent<Player>() : null;
     }
 }

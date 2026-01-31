@@ -27,15 +27,15 @@ public class Player : MonoBehaviour
     [SerializeField] private float meterDrainRate = 65f;
     [SerializeField] private float movingThreshold = 0.05f;
 
+    [Header("Facing")]
+    [SerializeField] private float rotationSpeed = 15f;
+
     public float Meter => _meter;
     public float MeterNormalized => meterMax <= 0f ? 0f : Mathf.Clamp01(_meter / meterMax);
     public Vector2 LastMoveDirection => _lastNonZeroDir;
 
-    public bool UsingGamepad => _usingGamepad;
-    public string CurrentControlScheme => _currentControlScheme;
-
     private Rigidbody2D _rb;
-    private PlayerInput _playerInput;
+    private SpriteRenderer _sprite;
 
     private Vector2 _rawInput;
     private Vector2 _moveDir;
@@ -48,18 +48,15 @@ public class Player : MonoBehaviour
     private float _dashCooldownTimer;
     private Vector2 _dashDir;
 
-    private bool _usingGamepad;
-    private string _currentControlScheme = "";
+    private float _targetRotation;
 
     private void Awake()
     {
         _rb = GetComponent<Rigidbody2D>();
-        _playerInput = GetComponent<PlayerInput>();
+        _sprite = GetComponentInChildren<SpriteRenderer>();
 
         _rb.gravityScale = 0f;
         _rb.freezeRotation = true;
-
-        UpdateControlScheme();
     }
 
     private void OnEnable()
@@ -69,16 +66,12 @@ public class Player : MonoBehaviour
 
         if (dashAction != null)
             dashAction.action.performed += OnDashPerformed;
-
-        _playerInput.onControlsChanged += OnControlsChanged;
     }
 
     private void OnDisable()
     {
         if (dashAction != null)
             dashAction.action.performed -= OnDashPerformed;
-
-        _playerInput.onControlsChanged -= OnControlsChanged;
 
         moveAction?.action.Disable();
         dashAction?.action.Disable();
@@ -94,6 +87,8 @@ public class Player : MonoBehaviour
 
         if (_moveDir.sqrMagnitude > 0.0001f)
             _lastNonZeroDir = _moveDir.normalized;
+
+        UpdateFacing();
 
         _dashCooldownTimer -= Time.deltaTime;
 
@@ -112,6 +107,7 @@ public class Player : MonoBehaviour
         if (_isDashing)
         {
             _rb.linearVelocity = _dashDir * dashSpeed;
+            ApplyRotation();
             return;
         }
 
@@ -121,6 +117,8 @@ public class Player : MonoBehaviour
 
         vel = Vector2.MoveTowards(vel, targetVel, rate * Time.fixedDeltaTime);
         _rb.linearVelocity = vel;
+
+        ApplyRotation();
     }
 
     private void OnDashPerformed(InputAction.CallbackContext ctx)
@@ -144,6 +142,8 @@ public class Player : MonoBehaviour
         _isDashing = true;
         _dashTimer = dashDuration;
         _dashCooldownTimer = dashCooldown;
+
+        UpdateFacing(_dashDir);
     }
 
     private void UpdateMeter()
@@ -163,24 +163,35 @@ public class Player : MonoBehaviour
         _meter = Mathf.Clamp(_meter, 0f, meterMax);
     }
 
-    private void OnControlsChanged(PlayerInput obj)
+    private void UpdateFacing()
     {
-        UpdateControlScheme();
+        UpdateFacing(_moveDir.sqrMagnitude > 0.0001f ? _moveDir : _lastNonZeroDir);
     }
 
-    private void UpdateControlScheme()
+    private void UpdateFacing(Vector2 dir)
     {
-        _currentControlScheme = _playerInput.currentControlScheme ?? "";
+        if (dir.sqrMagnitude <= 0.0001f)
+            return;
 
-        _usingGamepad = false;
+        bool flip = dir.x < 0f;
+        if (_sprite != null) _sprite.flipX = flip;
 
-        foreach (var device in _playerInput.devices)
-        {
-            if (device is Gamepad)
-            {
-                _usingGamepad = true;
-                break;
-            }
-        }
+        float angle = Mathf.Atan2(dir.y, Mathf.Abs(dir.x)) * Mathf.Rad2Deg;
+
+        if (flip)
+            angle = -angle;
+
+        _targetRotation = Mathf.Clamp(angle, -90f, 90f);
+    }
+
+    private void ApplyRotation()
+    {
+        float newRotation = Mathf.LerpAngle(
+            _rb.rotation,
+            _targetRotation,
+            rotationSpeed * Time.fixedDeltaTime
+        );
+
+        _rb.rotation = newRotation;
     }
 }
