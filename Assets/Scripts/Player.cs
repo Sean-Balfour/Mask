@@ -26,6 +26,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float meterMax = 100f;
     [SerializeField] private float meterBuildRate = 35f;
     [SerializeField] private float meterDrainRate = 65f;
+    [SerializeField] private float meterHideOutMultiplier = 2.0f;
     [SerializeField] private float movingThreshold = 0.05f;
 
     [Header("Facing")]
@@ -38,6 +39,8 @@ public class Player : MonoBehaviour
 
     [SerializeField]
     private Fade fade;
+
+    public bool bInHideOut = false;
 
     [SerializeField]
     private Enemy enemy;
@@ -206,7 +209,14 @@ public class Player : MonoBehaviour
         }
         else
         {
-            _meter -= meterDrainRate * Time.deltaTime;
+            if (bInHideOut)
+            {
+                _meter -= meterDrainRate * Time.deltaTime;
+            }
+            else
+            {
+                _meter -= meterDrainRate * meterHideOutMultiplier *  Time.deltaTime;
+            }
         }
 
         _meter = Mathf.Clamp(_meter, 0f, meterMax);

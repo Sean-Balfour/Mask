@@ -52,7 +52,7 @@ public class Fade : MonoBehaviour
 
         yield return new WaitForSeconds(0.5f);
 
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+        SceneManager.LoadScene("GameOver");
     }
 
     private IEnumerator DoFadeIn()
