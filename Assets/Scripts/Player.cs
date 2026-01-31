@@ -16,6 +16,17 @@ public class Player : MonoBehaviour
     [SerializeField] private float deceleration = 55f;
     [SerializeField] private bool normalizeDiagonal = true;
 
+    // Minimum speed required before the meter can build.
+    // Intended for analog movement (controller stick partial tilt).
+    [SerializeField] private float minBuildUpSpeed = 3.0f;
+
+    [Header("Controller / Analog Support")]
+    [Tooltip("Analog deadzone applied to movement input. 0 = none.")]
+    [SerializeField] private float inputDeadzone = 0.15f;
+
+    [Tooltip("If true, input within deadzone becomes 0 and the rest is re-scaled to 0..1.")]
+    [SerializeField] private bool rescaleAfterDeadzone = true;
+
     [Header("Dash")]
     [SerializeField] private float dashSpeed = 14f;
     [SerializeField] private float dashDuration = 0.12f;
@@ -28,6 +39,7 @@ public class Player : MonoBehaviour
     [SerializeField] private float meterDrainRate = 65f;
     [SerializeField] private float meterHideOutMultiplier = 2.0f;
     [SerializeField] private float movingThreshold = 0.05f;
+    [SerializeField] private bool useIntensityForMeter = false;
 
     [Header("Facing")]
     [SerializeField] private float rotationSpeed = 15f;
@@ -37,24 +49,19 @@ public class Player : MonoBehaviour
     [SerializeField] private Animator baseAnimator;
     [SerializeField] private Animator blendAnimator;
 
-    [SerializeField]
-    private Fade fade;
+    [SerializeField] private Fade fade;
 
-    [SerializeField]
-    private bool needsHideOut = true;
+    [SerializeField] private bool needsHideOut = true;
     public bool inHideOut = false;
 
-    [SerializeField]
-    private Enemy enemy;
+    [SerializeField] private Enemy enemy;
 
     public bool dead = false;
 
-    [SerializeField]
-    private int Lives = 3;
+    [SerializeField] private int Lives = 3;
     private int currentLives;
 
-    [SerializeField]
-    private float ImmuneTimeAfterDie = 3.0f;
+    [SerializeField] private float ImmuneTimeAfterDie = 3.0f;
 
     public bool immune = false;
 
@@ -65,7 +72,7 @@ public class Player : MonoBehaviour
     private Rigidbody2D _rb;
 
     private Vector2 _rawInput;
-    private Vector2 _moveDir;
+    private Vector2 _moveDir; // NOTE: retains analog magnitude (0..1)
     private Vector2 _lastNonZeroDir = Vector2.right;
 
     private float _meter;
@@ -116,8 +123,12 @@ public class Player : MonoBehaviour
             return;
 
         _rawInput = moveAction != null ? moveAction.action.ReadValue<Vector2>() : Vector2.zero;
-        _moveDir = _rawInput;
 
+        // Apply analog deadzone + optional rescaling so partial stick tilt is supported cleanly.
+        _moveDir = ApplyDeadzone(_rawInput, inputDeadzone, rescaleAfterDeadzone);
+
+        // Only normalize when exceeding length 1 (e.g., keyboard diagonal or extreme input),
+        // preserving analog magnitude otherwise.
         if (normalizeDiagonal && _moveDir.sqrMagnitude > 1f)
             _moveDir.Normalize();
 
@@ -150,6 +161,7 @@ public class Player : MonoBehaviour
             return;
         }
 
+        // Because _moveDir retains analog magnitude, targetVel scales smoothly from 0..moveSpeed.
         Vector2 targetVel = _moveDir * moveSpeed;
         Vector2 vel = _rb.linearVelocity;
         float rate = targetVel.sqrMagnitude > 0.0001f ? acceleration : deceleration;
@@ -204,13 +216,28 @@ public class Player : MonoBehaviour
     {
         float speed = _rb.linearVelocity.magnitude;
 
-        if (speed > movingThreshold)
+        // Player intent based on analog input (partial stick tilt counts as intent).
+        float desiredSpeed = _moveDir.magnitude * moveSpeed;
+        bool tryingToMove = desiredSpeed > movingThreshold;
+
+        // Build meter ONLY when moving at/above minBuildUpSpeed (and trying to move).
+        bool canBuild = tryingToMove && speed >= minBuildUpSpeed;
+
+        if (canBuild)
         {
-            float intensity = Mathf.Clamp01(moveSpeed <= 0f ? 0f : speed / moveSpeed);
+            // Smoothly ramp intensity from 0 at minBuildUpSpeed to 1 at moveSpeed.
+            float intensity = (moveSpeed <= 0f)
+                ? 0f
+                : Mathf.Clamp01(Mathf.InverseLerp(minBuildUpSpeed, moveSpeed, speed));
+
+            if (!useIntensityForMeter)
+                intensity = 1.0f;
+
             _meter += meterBuildRate * intensity * Time.deltaTime;
         }
         else
         {
+            // Treat below-min speed (or not trying to move) like "not moving" for meter purposes.
             if (needsHideOut)
             {
                 if (inHideOut)
@@ -265,6 +292,23 @@ public class Player : MonoBehaviour
         );
 
         _rb.rotation = newRotation;
+    }
+
+    private static Vector2 ApplyDeadzone(Vector2 input, float deadzone, bool rescale)
+    {
+        float mag = input.magnitude;
+        if (deadzone <= 0f)
+            return input;
+
+        if (mag <= deadzone)
+            return Vector2.zero;
+
+        if (!rescale)
+            return input;
+
+        // Re-scale so (deadzone..1) maps to (0..1).
+        float newMag = Mathf.InverseLerp(deadzone, 1f, mag);
+        return input.normalized * newMag;
     }
 
     public void Die()
