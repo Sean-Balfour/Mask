@@ -319,6 +319,9 @@ public class Player : MonoBehaviour
 
     public void Die()
     {
+        if (dead)
+            return;
+
         enemy.isMoving = false;
         currentLives--;
 
@@ -333,11 +336,14 @@ public class Player : MonoBehaviour
         if (currentLives < 0)
         {
             fade.FadeOutEnd();
+            return;
         }
         else
         {
             StartCoroutine(Respawn());
         }
+
+        CameraManager.Instance.ResetCamera();
     }
 
     private IEnumerator Respawn()

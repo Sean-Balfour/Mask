@@ -22,7 +22,7 @@ public class Goal : MonoBehaviour
             yield return new WaitForSeconds(1.0f / 100.0f);
         }
 
-        if (SceneManager.GetActiveScene().buildIndex != 3)
+        if (SceneManager.GetActiveScene().buildIndex != 2)
         {
             SceneManager.LoadScene("Level_" + (SceneManager.GetActiveScene().buildIndex + 1).ToString());
         }

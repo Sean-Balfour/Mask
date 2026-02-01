@@ -147,7 +147,8 @@ public class UIManager : MonoBehaviour
 
     public void UpdateLives(int Lives)
     {
-        LivesImage.sprite = livesSprites[Lives];
+        if (Lives >= 0)
+            LivesImage.sprite = livesSprites[Lives];
     }
 
     public void UpdateMeterBar(float meterNormalized)

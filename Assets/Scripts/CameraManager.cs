@@ -3,6 +3,10 @@ using UnityEngine;
 
 public class CameraManager : MonoBehaviour
 {
+    public static CameraManager Instance;
+
+    
+
     [SerializeField]
     private Vector3 startPosition;
 
@@ -21,6 +25,8 @@ public class CameraManager : MonoBehaviour
     private void Awake()
     {
         transform.position = startPosition;
+
+        Instance = this;
     }
 
     private void Start()
@@ -33,6 +39,12 @@ public class CameraManager : MonoBehaviour
         yield return new WaitForSeconds(timeToStart);
 
         moving = true;
+    }
+
+    public void ResetCamera()
+    {
+        timeTaken = 0.0f;
+        transform.position = startPosition;
     }
 
     private void FixedUpdate()
