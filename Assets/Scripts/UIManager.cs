@@ -76,7 +76,7 @@ public class UIManager : MonoBehaviour
 
     public void UpdateMeterBar(float meterNormalized)
     {
-        meterBar.sizeDelta = new Vector2(249, (meterBarMaxHeight * meterNormalized));
+        meterBar.sizeDelta = new Vector2(249, meterBarMaxHeight * meterNormalized);
     }
 
     public void PlayGame()

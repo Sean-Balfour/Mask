@@ -22,6 +22,13 @@ public class Goal : MonoBehaviour
             yield return new WaitForSeconds(1.0f / 100.0f);
         }
 
-        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
+        if (SceneManager.GetActiveScene().buildIndex != 3)
+        {
+            SceneManager.LoadScene("Level_" + (SceneManager.GetActiveScene().buildIndex + 1).ToString());
+        }
+        else
+        {
+            SceneManager.LoadScene("WinScreen");
+        }
     }
 }
