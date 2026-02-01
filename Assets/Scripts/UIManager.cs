@@ -198,7 +198,8 @@ public class UIManager : MonoBehaviour
     public void QuitLevel()
     {
         AudioController.Instance.ButtonPress();
-        StartCoroutine(QuitLevelFade());
+        Time.timeScale = 1.0f;
+        SceneManager.LoadScene("MainMenu");
     }
 
     private IEnumerator QuitLevelFade()
