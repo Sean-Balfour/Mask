@@ -148,8 +148,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c256c90b91f67647aec216a452c12a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextNodes:
-  - {fileID: 978520480}
+  nextNode: {fileID: 0}
+  prevNode: {fileID: 0}
+  nodeParent: {fileID: 0}
 --- !u!4 &35208351
 Transform:
   m_ObjectHideFlags: 0
@@ -297,6 +298,11 @@ MonoBehaviour:
   shrimpLeft: 140
   shrimpRight: 1800
   shrimpProgress: {fileID: 0}
+  PauseMenu: {fileID: 0}
+  GameMenu: {fileID: 0}
+  controlsMenu: {fileID: 0}
+  mainMenu: {fileID: 0}
+  pauseAction: {fileID: 0}
 --- !u!1 &315157865
 GameObject:
   m_ObjectHideFlags: 0
@@ -326,8 +332,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c256c90b91f67647aec216a452c12a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextNodes:
-  - {fileID: 35208350}
+  nextNode: {fileID: 0}
+  prevNode: {fileID: 0}
+  nodeParent: {fileID: 0}
 --- !u!4 &315157867
 Transform:
   m_ObjectHideFlags: 0
@@ -506,8 +513,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c256c90b91f67647aec216a452c12a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextNodes:
-  - {fileID: 1836897478}
+  nextNode: {fileID: 0}
+  prevNode: {fileID: 0}
+  nodeParent: {fileID: 0}
 --- !u!1 &1329671949
 GameObject:
   m_ObjectHideFlags: 0
@@ -697,7 +705,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: -450}
-  m_SizeDelta: {x: 1024, y: 768}
+  m_SizeDelta: {x: 830, y: 449}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1674071576
 MonoBehaviour:
@@ -719,7 +727,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 1723ce0de909fc24b8bafc986b89474f, type: 3}
+  m_Sprite: {fileID: 317010468468323505, guid: e378c4b4322900640a969c53a254d4a3, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -766,8 +774,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c256c90b91f67647aec216a452c12a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nextNodes:
-  - {fileID: 315157866}
+  nextNode: {fileID: 0}
+  prevNode: {fileID: 0}
+  nodeParent: {fileID: 0}
 --- !u!4 &1836897479
 Transform:
   m_ObjectHideFlags: 0
@@ -986,7 +995,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 913278236245225271, guid: f7ee0908244fb694395618332059e471, type: 3}
+  m_Sprite: {fileID: 913278236245225271, guid: d2cbaf03a7ad3074db69b7434c1f7991, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

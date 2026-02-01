@@ -1,9 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
-using NUnit.Framework;
-using UnityEditor.Experimental.GraphView;
-using UnityEditorInternal;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -49,6 +47,62 @@ public class UIManager : MonoBehaviour
     [SerializeField]
     private Image shrimpProgress;
 
+    [SerializeField]
+    private GameObject PauseMenu;
+
+    [SerializeField]
+    private GameObject GameMenu;
+
+    [SerializeField]
+    private GameObject controlsMenu;
+
+    [SerializeField]
+    private GameObject mainMenu;
+
+    [SerializeField] private InputActionReference pauseAction;
+
+    private bool Paused = false;
+
+    private void OnEnable()
+    {
+        if (pauseAction)
+            pauseAction.action.performed += TogglePause;
+    }
+
+    private void OnDisable()
+    {
+        if (pauseAction)
+            pauseAction.action.performed -= TogglePause;
+    }
+
+    public void TogglePause(InputAction.CallbackContext context)
+    {
+        TogglePauseNoContext();
+    }
+
+    public void TogglePauseNoContext()
+    {
+        if (!PauseMenu)
+            return;
+
+        AudioController.Instance.ButtonPress();
+
+        if (Paused)
+        {
+            Time.timeScale = 1.0f;
+            PauseMenu.SetActive(false);
+            GameMenu.SetActive(true);
+            Paused = false;
+        }
+        else
+        {
+            Time.timeScale = 0.0f;
+            PauseMenu.SetActive(true);
+            GameMenu.SetActive(false);
+            Paused = true;
+        }
+    }
+
     private void Update()
     {
         if (start == null)
@@ -69,6 +123,28 @@ public class UIManager : MonoBehaviour
         shrimpProgress.rectTransform.anchoredPosition = new Vector3(currentPosition, 380.0f, 0.0f);
     }
 
+    public void ControlsMenu()
+    {
+        AudioController.Instance.ButtonPress();
+
+        controlsMenu.SetActive(true);
+        if (PauseMenu)
+            PauseMenu.SetActive(false);
+        if (mainMenu)
+            mainMenu.SetActive(false);
+    }
+
+    public void Back()
+    {
+        AudioController.Instance.ButtonPress();
+
+        controlsMenu.SetActive(false);
+        if (PauseMenu)
+            PauseMenu.SetActive(true);
+        if (mainMenu)
+            mainMenu.SetActive(true);
+    }
+
     public void UpdateLives(int Lives)
     {
         LivesImage.sprite = livesSprites[Lives];
@@ -81,6 +157,7 @@ public class UIManager : MonoBehaviour
 
     public void PlayGame()
     {
+        AudioController.Instance.ButtonPress();
         StartCoroutine(PlayGameFade());
     }
 
@@ -99,6 +176,7 @@ public class UIManager : MonoBehaviour
     }
     public void RestartGame()
     {
+        AudioController.Instance.ButtonPress();
         StartCoroutine(RestartGameFade());
     }
 
@@ -116,8 +194,29 @@ public class UIManager : MonoBehaviour
         SceneManager.LoadScene("MainMenu");
     }
 
+    public void QuitLevel()
+    {
+        AudioController.Instance.ButtonPress();
+        StartCoroutine(QuitLevelFade());
+    }
+
+    private IEnumerator QuitLevelFade()
+    {
+        Fade.Instance.FadeOut();
+
+        float tick = 0;
+        for (int i = 0; i < 100; i++)
+        {
+            tick++;
+            yield return new WaitForSeconds(1.0f / 100.0f);
+        }
+
+        SceneManager.LoadScene("MainMenu");
+    }
+
     public void QuitGame()
     {
+        AudioController.Instance.ButtonPress();
         StartCoroutine(QuitGameFade());
     }
 

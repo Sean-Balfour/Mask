@@ -27,17 +27,30 @@ public class Enemy : MonoBehaviour
     [SerializeField] private Player player;
 
     public bool isMoving = true;
+    [SerializeField]
+    private bool movingInReverse = false;
+
+    private bool onCamera = false;
+    private float timeOffCamera;
+    [SerializeField]
+    private float timeOffCameraToReverse = 10.0f;
+
+    [SerializeField]
+    private Renderer rend;
+
 
     private void Start()
     {
+        rend = GetComponentInChildren<SpriteRenderer>();
+
         currentNode = startNode;
 
         if (currentNode != null)
         {
             transform.position = currentNode.transform.position;
 
-            if (currentNode.nextNodes != null && currentNode.nextNodes.Count > 0)
-                targetNode = currentNode.nextNodes[Random.Range(0, currentNode.nextNodes.Count)];
+            if (currentNode.nextNode != null)
+                targetNode = currentNode.nextNode;
         }
     }
 
@@ -46,11 +59,28 @@ public class Enemy : MonoBehaviour
         if (!isMoving)
             return;
 
-        if (currentNode == null || currentNode.nextNodes == null || currentNode.nextNodes.Count == 0 || targetNode == null)
+        if (currentNode == null || currentNode.nextNode == null || targetNode == null)
             return;
 
         if (Time.timeScale == 0)
             return;
+
+        if (rend)
+        {
+            if (rend.isVisible)
+            {
+                timeOffCamera = 0.0f;
+            }
+            else
+            {
+                timeOffCamera += Time.deltaTime;
+                if (timeOffCamera > timeOffCameraToReverse)
+                {
+                    timeOffCamera = -timeOffCameraToReverse;
+                    movingInReverse = !movingInReverse;
+                }
+            }
+        }
 
         UpdateChaseState();
 
@@ -98,8 +128,20 @@ public class Enemy : MonoBehaviour
         {
             currentNode = targetNode;
 
-            if (currentNode.nextNodes != null && currentNode.nextNodes.Count > 0)
-                targetNode = currentNode.nextNodes[Random.Range(0, currentNode.nextNodes.Count)];
+            if (movingInReverse)
+            {
+                if (currentNode.prevNode != null)
+                {
+                    targetNode = currentNode.prevNode;
+                }
+            }
+            else
+            {
+                if (currentNode.nextNode != null)
+                {
+                    targetNode = currentNode.nextNode;
+                }
+            }
         }
     }
 

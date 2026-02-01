@@ -1,4 +1,4 @@
-using UnityEditor.SceneManagement;
+using System.Collections;
 using UnityEngine;
 
 public class CameraManager : MonoBehaviour
@@ -14,14 +14,30 @@ public class CameraManager : MonoBehaviour
 
     private float timeTaken;
 
+    private float timeToStart = 5.0f;
+
+    private bool moving = false;
+
     private void Awake()
     {
         transform.position = startPosition;
     }
 
+    private void Start()
+    {
+        StartCoroutine(StartMoving());
+    }
+
+    private IEnumerator StartMoving()
+    {
+        yield return new WaitForSeconds(timeToStart);
+
+        moving = true;
+    }
+
     private void FixedUpdate()
     {
-        if (timeTaken >= timeToMove)
+        if (timeTaken >= timeToMove || !moving)
         {
             return;
         }

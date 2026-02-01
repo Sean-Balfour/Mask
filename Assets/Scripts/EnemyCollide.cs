@@ -11,6 +11,9 @@ public class EnemyCollide : MonoBehaviour
     [SerializeField]
     private Enemy enemy;
 
+    [SerializeField]
+    private AudioClip bite;
+
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.gameObject.tag == "Player")
@@ -26,6 +29,7 @@ public class EnemyCollide : MonoBehaviour
         yield return new WaitForSeconds(0.1f);
 
         enemy.FindFurthestNodeFromPlayer();
+        AudioController.Instance.Bite();
         player.Die();
     }
 }
