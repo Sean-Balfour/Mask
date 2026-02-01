@@ -42,6 +42,8 @@ public class Fade : MonoBehaviour
 
     public IEnumerator DoFadeOut()
     {
+        FadeBG.enabled = true;
+
         float tick = 0;
         for (int i = 0; i < 100; i++)
         {
@@ -68,6 +70,8 @@ public class Fade : MonoBehaviour
 
     private IEnumerator DoFadeIn()
     {
+        FadeBG.enabled = true;
+
         FadeBG.color = new Color(0.0f, 0.0f, 0.0f, 1.0f);
         yield return new WaitForSeconds(0.5f);
         float tick = 0;
@@ -77,5 +81,7 @@ public class Fade : MonoBehaviour
             yield return new WaitForSeconds(1.0f / 100.0f);
             FadeBG.color = new Color(0.0f, 0.0f, 0.0f, 1.0f - (tick / 100.0f));
         }
+
+        FadeBG.enabled = false;
     }
 }

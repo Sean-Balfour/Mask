@@ -1,16 +1,10 @@
 fileFormatVersion: 2
-guid: 360a90ae266182f43987104ee9978241
+guid: 39a80a84519b9804fbafbe1f76a76bce
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 8189714866039083850
-    second: camo_meter_full_0
-  - first:
-      213: 9145025392754894921
-    second: camo_meter_full_1
-  - first:
-      213: 1108222849026132225
-    second: camo_meter_full_2
+      213: 6173570784262438552
+    second: camo_meter_bar_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -52,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -158,13 +152,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: camo_meter_full_0
+      name: camo_meter_bar_0
       rect:
         serializedVersion: 2
-        x: 15
-        y: 130
-        width: 54
-        height: 65
+        x: 183
+        y: 64
+        width: 249
+        height: 887
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -173,52 +167,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: a43def99746b7a170800000000000000
-      internalID: 8189714866039083850
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: camo_meter_full_1
-      rect:
-        serializedVersion: 2
-        x: 55
-        y: 124
-        width: 28
-        height: 50
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 948251d6428a9ee70800000000000000
-      internalID: 9145025392754894921
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: camo_meter_full_2
-      rect:
-        serializedVersion: 2
-        x: 58
-        y: 30
-        width: 377
-        height: 927
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 1098c204fc2316f00800000000000000
-      internalID: 1108222849026132225
+      spriteID: 89e31b75bedeca550800000000000000
+      internalID: 6173570784262438552
       vertices: []
       indices: 
       edges: []
@@ -227,7 +177,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -237,9 +187,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      camo_meter_full_0: 8189714866039083850
-      camo_meter_full_1: 9145025392754894921
-      camo_meter_full_2: 1108222849026132225
+      camo_meter_bar_0: 6173570784262438552
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -65,6 +65,9 @@ public class Player : MonoBehaviour
 
     public bool immune = false;
 
+    [SerializeField]
+    private Transform start;
+
     public float Meter => _meter;
     public float MeterNormalized => meterMax <= 0f ? 0f : Mathf.Clamp01(_meter / meterMax);
     public Vector2 LastMoveDirection => _lastNonZeroDir;
@@ -95,7 +98,8 @@ public class Player : MonoBehaviour
 
     private void Start()
     {
-        startPosition = transform.position;
+        startPosition = start.position;
+        transform.position = startPosition;
         currentLives = Lives;
     }
 
@@ -119,6 +123,8 @@ public class Player : MonoBehaviour
 
     private void Update()
     {
+        UIManager.Instance.UpdateMeterBar(MeterNormalized);
+
         if (Time.timeScale == 0 || dead)
             return;
 
